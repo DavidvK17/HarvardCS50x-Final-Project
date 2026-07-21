@@ -8,7 +8,7 @@ def initialize_database():
     conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
 
-    # Enable foreigh keys 
+    # Enable foreign keys 
     cursor.execute("PRAGMA foreign_keys = ON;")
 
     # 1. Assets Table
@@ -41,9 +41,7 @@ def initialize_database():
     
     # Portfolio Positions:
     portfolio_seed = [
-        ("ACWI", "SPDR MSCI ACWI IMI ETF Acc", "ETF", 3825.0, None),
         ("MSFT", "Microsoft", "STOCK", 1703.0, "0000789019"),
-        ("BRK.B", "Berkshire Hathaway", "STOCK", 1700.0, "0001067983"),
         ("COST", "Costco", "STOCK", 1701.0, "0000909832"),
         ("GOOGL", "Google", "STOCK", 1275.0, "0001652044"),
         ("AMZN", "Amazon", "STOCK", 1275.0, "0001018724"),
@@ -60,7 +58,7 @@ def initialize_database():
     
     conn.commit()
     conn.close()
-    print("Databse successfully generated and seeded with 10 holdings!")
+    print("Databse successfully generated and seeded with 8 holdings!")
 
 if __name__ == "__main__":
     initialize_database()
