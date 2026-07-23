@@ -5,7 +5,7 @@ from typing import List, Dict, Any
 
 app = FastAPI(
     title = "Financial Portfolio Analytics API",
-    description = "Enterprise REST-API for fetching SEC-Fundamentals for React-Frontend",
+    description = "REST-API for fetching SEC-Fundamentals for Vue-Frontend",
     version = "1.0.0"
 )
 
@@ -30,7 +30,7 @@ def get_assets():
     cursor = conn.cursor()
 
     try:
-        cursor.execute("SELECT id, ticker, name, asset_type, allocation_eur, cik FROM assets;")
+        cursor.execute("SELECT id, ticker, name, cik FROM assets;")
         assets = [dict(row) for row in cursor.fetchall()]
         return assets
     except sqlite3.Error as e:

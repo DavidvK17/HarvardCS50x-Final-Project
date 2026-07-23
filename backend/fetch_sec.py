@@ -4,11 +4,10 @@ import requests
 from datetime import datetime
 
 DB_NAME = "portfolio.db"
-
 HEADERS = {"User-Agent": "David Singer david.sing7@gmail.com"}
 
 def fetch_company_facts(cik):
-    """Retrieves the full XBRL corporate financial histpry data pacakge from SEC EDGAR. """
+    """Retrieves the full XBRL corporate financial history data pacakge from SEC EDGAR. """
     padded_cik = str(cik).zfill(10)
     url = f"https://data.sec.gov/api/xbrl/companyfacts/CIK{padded_cik}.json"
 
@@ -34,7 +33,7 @@ def get_duration_days(start_str, end_str):
         return 0
     
 def extract_annual_fundamentals(facts_json):
-    """Parse raw JSOn facts to map revenue and opeating income across fiscal years """
+    """Parse raw JSON facts to map revenue and operating income across fiscal years """
     if not facts_json or 'facts' not in facts_json:
         return {}
     
@@ -130,8 +129,6 @@ def run_pipeline():
             continue
 
         financials = extract_annual_fundamentals(raw_facts)
-
-        # Sort years to accuarately dereive histoircal YoY revenue growth metrics
         sorted_years = sorted(financials.keys())
 
         for i, year in enumerate(sorted_years):
@@ -142,15 +139,16 @@ def run_pipeline():
             if rev is None and op_inc is None:
                 continue # Skip dead empty years
 
-            # compute opeartional efficiency margins
+            # compute operational efficiency margins
             margin = (op_inc / rev * 100) if rev and op_inc is not None else None
 
             growth = None
             if i > 0:
                 prev_year = sorted_years[i-1]
-                prev_rev = financials[prev_year]['revenue']
-                if rev and prev_rev:
-                    growth = ((rev - prev_rev) / prev_rev) * 100
+                if year - prev_year == 1:
+                    prev_rev = financials[prev_year]['revenue']
+                    if rev and prev_rev:
+                        growth = ((rev - prev_rev) / prev_rev) * 100
             
             cursor.execute("""
                         INSERT OR REPLACE INTO fundamentals
@@ -160,7 +158,7 @@ def run_pipeline():
         
         print(f"Successfully mapped and stored data for {ticker}.")
 
-        # Respect SEC rate limits (Max 10 requests per second allewed salfely)
+        # Respect SEC rate limits (Max 10 requests per second allowed safely)
         time.sleep(0.15)
 
     conn.commit()
