@@ -17,7 +17,7 @@ def initialize_database():
                    id INTEGER PRIMARY KEY AUTOINCREMENT,
                    ticker TEXT UNIQUE NOT NULL,
                    name TEXT NOT NULL,
-                   cik TEXT UNIQUE, -- SEC CIK code (Null for ETFs)
+                   cik TEXT UNIQUE, -- SEC CIK code
                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                    );
                    """)
