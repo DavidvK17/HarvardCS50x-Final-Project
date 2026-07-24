@@ -72,7 +72,7 @@ const handleBacktoHome = () => {
             <div class="portfolio-app__search-container">
               <input
               v-model="searchQuery"
-              type="text"
+              type="search"
               placeholder="🔍 Search equities by ticker symbol or company name..."
               class="portfolio-app__search-input"
               />
