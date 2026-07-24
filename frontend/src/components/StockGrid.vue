@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import type { Asset } from '../types'
 import StockCard from './StockCard.vue';
 
 const props = defineProps<{
+    selectedIndex: string
     searchFilter: string
 }>()
 
@@ -21,7 +22,7 @@ const fetchAssets = async () => {
         isLoading.value = true
         errorMessage.value = null
 
-        const response = await fetch('http://localhost:8000/api/assets')
+        const response = await fetch(`http://localhost:8000/api/assets?index=${props.selectedIndex}`)
 
         if (!response.ok) {
             throw new Error(`Server returned status ${response.status}`)
@@ -36,6 +37,10 @@ const fetchAssets = async () => {
         isLoading.value = false
     }
 }
+
+watch(() => props.selectedIndex, () => {
+    fetchAssets()
+})
 
 const filteredAssets = computed(() => {
     const query = props.searchFilter.toLowerCase().trim()

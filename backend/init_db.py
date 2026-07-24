@@ -1,62 +1,73 @@
 import sqlite3
 import requests
-import re
+import pandas as pd
 
 DB_NAME = "portfolio.db"
 HEADERS = {"User-Agent": "David Singer david.sing7@gmail.com"}
-
-# ====================================================================================
-# CONFIGURATION MODULE: TOGGLE YOUR TARGET INDEX HERE!
-# Options available: "DOW30" (30 Stocks), "NASDAQ100" (100 Stocks), "SP500" (500Stocks)
-# ====================================================================================
-
-INDEX_SELECTION = "SP500"
+INDICES = ["SP500", "NASDAQ100", "DOW30"]
 
 def get_index_tickers(index_type):
-    print(f"Scanning current {index_type} components list via web registry...")
+    print(f"Scanning current {index_type} components list via Wikipedia...")
 
-    if index_type == "SP500":
-        url = "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies"
-    elif index_type == "NASDAQ100":
-        url = "https://en.wikipedia.org/wiki/List_of_NASDAQ-100_companies"
-    elif index_type == "DOW30":
-        url = "https://en.wikipedia.org/wiki/Dow_Jones_Industrial_Average"
-    else:
-        raise ValueError("Unsupported index selection type.")
+    pages = {
+        "SP500": (
+            "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+            "Symbol"
+        ),
+        "NASDAQ100": (
+            "https://en.wikipedia.org/wiki/List_of_NASDAQ-100_companies",
+            "Ticker"
+        ),
+        "DOW30": (
+            "https://en.wikipedia.org/wiki/Dow_Jones_Industrial_Average",
+            "Symbol"
+        )
+    }
+
+    if index_type not in pages:
+        return set()
+
+    url, ticker_column = pages[index_type]
 
     try:
-        response = requests.get(url, headers=HEADERS)
-        if response.status_code != 200:
-            print(f"Failed to scan target index: HTTP {response.status_code}")
-            return set()
+        # Read every table on the page
+        tables = pd.read_html(
+            url,
+            storage_options={"User-Agent": HEADERS["User-Agent"]}
+        )
 
-        html = response.text
+        tickers = set()
 
-        if "id=\"constituents\"" in html:
-            html = html.split("id=\"constituents\"")[1].split("</table>")[0]
-        elif index_type == "DOW30":
-            parts = html.split('class="wikitable"')
-            for part in parts[1:]:
-                if "Goldman Sachs" in part or "Microsoft" in part:
-                    html = part.split('<table>')[0]
-                    break
+        for table in tables:
 
-        raw_matches = re.findall(r'>([A-Z]{1,5}(?:\.[A-Z])?)<\/a>', html)
+            if ticker_column not in table.columns:
+                continue
 
-        exclude_set = {'NYSE', 'NASDAQ', 'CBOE', 'SEC', 'CIK', 'USD', 'DJIA', 'S', 'P', 'GICS', 'USA'}
-        target_tickers = set()
+            for value in table[ticker_column]:
 
-        for ticker in raw_matches:
-            clean_ticker = ticker.strip().replace('.', '-')
-            if clean_ticker and clean_ticker not in exclude_set and not clean_ticker.isdigit():
-                target_tickers.add(clean_ticker)
+                if pd.isna(value):
+                    continue
 
-        print(f"Discovered {len(target_tickers)} unique symbols in registry mapping.")
-        return target_tickers
+                ticker = str(value).strip().upper()
+
+                # DOw pages has "MMM: 3M"
+                if ":" in ticker:
+                    ticker = ticker.split(":")[0].strip()
+
+                ticker = ticker.replace(".", "-")
+
+                tickers.add(ticker)
+
+            break
+
+        print(f"Discovered {len(tickers)} unique symbols in registry mapping.")
+        return tickers
 
     except Exception as e:
         print(f"❌ Error compiling target index elements: {e}")
         return set()
+
+
 
 def initialize_database():
     print(f"Creating database file: {DB_NAME}...")
@@ -93,14 +104,26 @@ def initialize_database():
                    );
                    """)
 
-    target_symbols = get_index_tickers(INDEX_SELECTION)
+    cursor.execute("""
+                    CREATE TABLE IF NOT EXISTS asset_index_mapping (
+                    asset_id INTEGER,
+                    index_code TEXT,
+                    PRIMARY KEY (asset_id, index_code),
+                    FOREIGN KEY (asset_id) REFERENCES assets(id) ON DELETE CASCADE
+                    );
+                    """)
 
-    if not target_symbols:
-        print("Aborting database seed: No symbols were retrieved from the web registry.")
-        conn.close()
-        return
+    conn.commit()
+
+    index_maps = {}
+    all_unique_tickers = set()
+
+    for index in INDICES:
+        tickers = get_index_tickers(index)
+        index_maps[index] = tickers
+        all_unique_tickers.update(tickers)
   
-    print("Connecting to master SEC EDGAR global data vault maps...")
+    print("Syncing master SEC directory maps...")
     try:
         sec_url = "https://www.sec.gov/files/company_tickers.json"
         sec_response = requests.get(sec_url, headers=HEADERS)
@@ -111,21 +134,24 @@ def initialize_database():
 
             for _, item in sec_registry.items():
                 ticker = item['ticker'].upper().replace('.', '-')
-                name = item['title']
-                cik = str(item['cik_str']).zfill(10)
+                if ticker in all_unique_tickers:
+                    portfolio_seed.append((ticker, item['title'], str(item['cik_str']).zfill(10)))
 
-                if ticker in target_symbols:
-                    portfolio_seed.append((ticker, name, cik))
-
-            print(f" Seeding SQL engine database tables with validated entries ({len(portfolio_seed)} units matching)...")  
             cursor.executemany("""
                             INSERT OR IGNORE INTO assets (ticker, name, cik) VALUES (?, ?, ?);
                             """, portfolio_seed)
     
             conn.commit()
-            print(f"Database initialization complete! Target set successfully configured to: {INDEX_SELECTION}")
-        else:
-            print(f"Failed to sync with SEC master directories: HTTP {sec_response.status_code}")
+            print("Mapping relational connections between assets and market indices...")
+            for index, tickers in index_maps.items():
+                for t in tickers:
+                    cursor.execute("SELECT id FROM assets WHERE ticker = ?;", (t,))
+                    row = cursor.fetchone()
+                    if row:
+                        cursor.execute("INSERT OR IGNORE INTO asset_index_mapping (asset_id, index_code) VALUES (?, ?);", (row[0], index))
+
+            conn.commit()
+            print("System setup complete! All index tracks mapped successfully.")
 
     except Exception as e:
         print(f"❌ Critical system connection breakdown: {e}")

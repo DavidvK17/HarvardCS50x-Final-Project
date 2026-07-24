@@ -1,11 +1,19 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import type { Asset } from './types'
 import StockGrid from './components/StockGrid.vue';
-import ChartView from './components/ChartView.vue';
+import ChartView from './components/ChartView.vue'
 
 const selectedAsset = ref<Asset | null>(null)
 const searchQuery = ref<string>('')
+const currentIndex = ref<string>('SP500')
+
+const indexTitle = computed(() => {
+  if (currentIndex.value === 'SP500') return 'S&P 500 Index'
+  if (currentIndex.value === 'NASDAQ100') return 'Nasdaq-100'
+  if (currentIndex.value === 'DOW30') return 'Dow Jones Industrial Average'
+  return 'Portfolio Equities'
+})
 
 const handleSelectedAsset = (asset: Asset) => {
   selectedAsset.value = asset
@@ -24,7 +32,6 @@ const handleBacktoHome = () => {
             <h1 class="portfolio-app__brand" @click="handleBacktoHome">
               Homepage <span class="portfolio-app__brand-pill">SEC Portal</span>
             </h1>
-
             <button
               v-if="selectedAsset"
               class="portfolio-app__back-button"
@@ -39,9 +46,29 @@ const handleBacktoHome = () => {
         <!-- View 1: The Homepage 8-Widget Grid-->
          <section v-if="!selectedAsset" class="portfolio-app__view-container">
           <div class="portfolio-app__view-header">
-            <h2>Portfolio Equities</h2>
-            <p>Select a company widget below to analyze its 5-year SEC fundamental trends.</p>
+            <h2>{{ indexTitle }} Equities</h2>
+            <p>Select a company widget below to analyze its historical fundamental trends.</p>
 
+            <!-- Dynamic Interactive Switch Tags Block -->
+             <div class="portfolio-app__index-tabs">
+              <button
+                class="portfolio-app__tab-btn"
+                :class="{ 'portfolio-app__tab-btn--active': currentIndex === 'SP500'}"
+                @click="currentIndex = 'SP500'"
+              >S&P 500</button>
+              <button
+                class="portfolio-app__tab-btn"
+                :class="{ 'portfolio-app__tab-btn--active': currentIndex === 'NASDAQ100'}"
+                @click="currentIndex = 'NASDAQ100'"
+              >Nasdaq-100</button>
+              <button
+                class="portfolio-app__tab-btn"
+                :class="{ 'portfolio-app__tab-btn--active': currentIndex === 'DOW30'}"
+                @click="currentIndex = 'DOW30'"
+              >Dow Jones 30</button>
+             </div>
+
+            <!-- Search Filter Container-->
             <div class="portfolio-app__search-container">
               <input
               v-model="searchQuery"
@@ -52,7 +79,10 @@ const handleBacktoHome = () => {
             </div>
           </div> 
 
-           <StockGrid :search-filter="searchQuery" @select-asset="handleSelectedAsset"/>
+           <StockGrid 
+            :selectedIndex="currentIndex"
+            :search-filter="searchQuery" 
+            @select-asset="handleSelectedAsset"/>
          </section>
 
          <!-- VIEW 2: Asynchronous 4-Chart Detail View-->
@@ -115,7 +145,7 @@ const handleBacktoHome = () => {
     background-color: var(--c-bg-elevated);
     color: var(--c-text-main);
     border: 1px solid var(--c-bg-surface);
-    padding: calc(var(--spacing-base) * 1) calc((var(--spacing-base) * 2));
+    padding: calc(var(--spacing-base) * 1) calc(var(--spacing-base) * 2);
     border-radius: 6px;
     font-weight: 600;
     cursor: pointer;
@@ -150,6 +180,35 @@ const handleBacktoHome = () => {
   &__search-container {
     margin-bottom: calc(var(--spacing-base) * 4);
     max-width: 500px;
+  }
+
+  &__index-tabs {
+    display: flex;
+    gap: calc(var(--spacing-base) * 2);
+    margin-bottom: calc(var(--spacing-base) * 3);
+  }
+
+  &__tab-btn {
+    background-color: var(--c-bg-surface);
+    color: var(--c-text-muted);
+    border: 1px solid var(--c-bg-elevated);
+    padding: calc(var(--spacing-base) * 1.5) calc(var(--spacing-base) * 3);
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &:hover {
+      color: var(--c-text-main);
+      border-color: var(--c-text-muted);
+    }
+
+    &--active {
+      background-color: rgba(56, 189, 248, 0.1);
+      color: var(--c-brand-primary);
+      border-color: var(--c-brand-primary);
+    }
   }
 
   &__search-input {

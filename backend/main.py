@@ -5,7 +5,7 @@ from typing import List, Dict, Any
 
 app = FastAPI(
     title = "Financial Portfolio Analytics API",
-    description = "REST-API for fetching SEC-Fundamentals for Vue-Frontend",
+    description = "REST API for fetching SEC-Fundamentals for Vue frontend",
     version = "1.0.0"
 )
 
@@ -25,12 +25,21 @@ def get_db_connection():
     return conn
 
 @app.get("/api/assets", response_model=List[Dict[str, Any]])
-def get_assets():
+def get_assets(index: str = None):
     conn = get_db_connection()
     cursor = conn.cursor()
 
     try:
-        cursor.execute("SELECT id, ticker, name, cik FROM assets;")
+        if index:
+            cursor.execute("""
+                            SELECT a.id, a.ticker, a.name, a.cik
+                            FROM assets a
+                            JOIN asset_index_mapping m ON a.id = m.asset_id
+                            WHERE m.index_code = ?;
+                        """, (index,))
+        else:
+            cursor.execute("SELECT id, ticker, name, cik FROM assets;")
+
         assets = [dict(row) for row in cursor.fetchall()]
         return assets
     except sqlite3.Error as e:
