@@ -33,9 +33,7 @@ const fetchAssets = async () => {
     }
 }
 
-onMounted(() => {
-    fetchAssets()
-})
+onMounted(() => fetchAssets())
 </script>
 
 <template>

@@ -2,6 +2,7 @@
 import { ref } from 'vue';
 import type { Asset } from './types'
 import StockGrid from './components/StockGrid.vue';
+import ChartView from './components/ChartView.vue';
 
 const selectedAsset = ref<Asset | null>(null)
 
@@ -39,9 +40,9 @@ const handleBacktoHome = () => {
             <h2>Portfolio Equities</h2>
             <p>Select a company widget below to analyze its 5-year SEC fundamental trends.</p>
           </div> 
-          <!-- Placeholder for the 8-Widget Grid -->
            <StockGrid @select-asset="handleSelectedAsset"/>
          </section>
+
          <!-- VIEW 2: Asynchronous 4-Chart Detail View-->
           <section v-else class="portfolio-app__view-container">
             <div class="portfolio-app__company-banner">
@@ -52,10 +53,7 @@ const handleBacktoHome = () => {
               <h2>{{ selectedAsset.name }}</h2>
             </div>
 
-            <!-- Placeholder for the 4-Chart view-->
-             <div class="portfolio-app__placeholder portfolio-app__placeholder--charts">
-              <p>[ChartView Component Placeholder for Asset ID: {{ selectedAsset.id }}]</p>
-             </div>
+            <ChartView :asset-id="selectedAsset.id"/>
           </section>
        </main>
 
@@ -169,19 +167,6 @@ const handleBacktoHome = () => {
     color: var(--c-text-muted);
     font-family: monospace;
     font-size: 0.85rem;
-  }
-
-  &__placeholder {
-    background-color: var(--c-bg-surface);
-    border: 2px dashed var(--c-bg-elevated);
-    border-radius: 8px;
-    padding: calc(var(--spacing-base) * 12) calc(var(--spacing-base) * 4);
-    text-align: center;
-    color: var(--c-text-muted);
-
-    &--charts {
-      padding: calc(var(--spacing-base) * 20) calc(var(--spacing-base) * 4);
-    }
   }
 }
 </style>
