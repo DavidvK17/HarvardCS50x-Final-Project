@@ -1,13 +1,17 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import type { Asset } from '../types'
 import StockCard from './StockCard.vue';
+
+const props = defineProps<{
+    searchFilter: string
+}>()
 
 const emit = defineEmits<{
     'select-asset': [asset: Asset]
 }>()
 
-// ref: reactive wrapper box, Asset[]: only thing allowd, ([]) we start wih empty arr
+// ref: reactive wrapper box, Asset[]: only thing allowed, ([]) we start with empty arr
 const assets = ref<Asset[]>([])
 const isLoading = ref<boolean>(true)
 const errorMessage = ref<string | null>(null)
@@ -33,6 +37,16 @@ const fetchAssets = async () => {
     }
 }
 
+const filteredAssets = computed(() => {
+    const query = props.searchFilter.toLowerCase().trim()
+    if (!query) return assets.value
+
+    return assets.value.filter(asset => 
+        asset.ticker.toLowerCase().includes(query) ||
+        asset.name.toLowerCase().includes(query)
+    )
+})
+
 onMounted(() => fetchAssets())
 </script>
 
@@ -43,7 +57,7 @@ onMounted(() => fetchAssets())
             <div class="stock-grid__spinner"></div>
             <p>Loading portfolio assets from local database...</p>
          </div>
-         <!-- State 2: Expception/Error aLert Board-->
+         <!-- State 2: Exception/Error aLert Board-->
           <div v-else-if="errorMessage" class="stock-grid__status stock-grid__status--error">
             <p>⚠️ Connection Failure: {{ errorMessage }}</p>
             <button class="stock-grid__retry-btn" @click="fetchAssets">
@@ -51,14 +65,19 @@ onMounted(() => fetchAssets())
             </button>
           </div>
           <!-- State 3: The Primary Responsive Grid View -->
-          <div v-else class="stock-grid__content">
-            <StockCard
-            v-for="asset in assets"
-            :key="asset.id"
-            :asset="asset"
-            @select="emit('select-asset', asset)"
-            />
+           <div v-else>
+            <div v-if="filteredAssets.length === 0" class="stock-grid__empty-search">
+                <p>No corporate entities found matching "{{ props.searchFilter }}".</p>
+            </div>
+            <div v-else class="stock-grid__content">
+                <StockCard
+                    v-for="asset in filteredAssets"
+                    :key="asset.id"
+                    :asset="asset"
+                    @select="emit('select-asset', asset)"
+                />
           </div>
+           </div>
     </div>
 </template>
 
@@ -89,6 +108,16 @@ onMounted(() => fetchAssets())
             border-radius: 8px;
             padding: calc(var(--spacing-base) * 6);
         }
+    }
+
+    &__empty-search {
+        text-align: center;
+        padding: calc(var(--spacing-base) * 8);
+        background-color: var(--c-bg-elevated);
+        border: 1px solid var(--c-bg-elevated);
+        border-radius: 8px;
+        color: var(--c-text-muted);
+        font-size: 0.95rem;
     }
 
     &__spinner {

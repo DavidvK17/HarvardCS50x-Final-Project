@@ -5,12 +5,14 @@ import StockGrid from './components/StockGrid.vue';
 import ChartView from './components/ChartView.vue';
 
 const selectedAsset = ref<Asset | null>(null)
+const searchQuery = ref<string>('')
 
 const handleSelectedAsset = (asset: Asset) => {
   selectedAsset.value = asset
 }
 const handleBacktoHome = () => {
   selectedAsset.value = null
+  searchQuery.value = ''
 }
 </script>
 
@@ -39,8 +41,18 @@ const handleBacktoHome = () => {
           <div class="portfolio-app__view-header">
             <h2>Portfolio Equities</h2>
             <p>Select a company widget below to analyze its 5-year SEC fundamental trends.</p>
+
+            <div class="portfolio-app__search-container">
+              <input
+              v-model="searchQuery"
+              type="text"
+              placeholder="🔍 Search equities by ticker symbol or company name..."
+              class="portfolio-app__search-input"
+              />
+            </div>
           </div> 
-           <StockGrid @select-asset="handleSelectedAsset"/>
+
+           <StockGrid :search-filter="searchQuery" @select-asset="handleSelectedAsset"/>
          </section>
 
          <!-- VIEW 2: Asynchronous 4-Chart Detail View-->
@@ -133,6 +145,27 @@ const handleBacktoHome = () => {
       margin-bottom: calc(var(--spacing-base) * 4);
       color: var(--c-text-muted);
     }
+  }
+
+  &__search-container {
+    margin-bottom: calc(var(--spacing-base) * 4);
+    max-width: 500px;
+  }
+
+  &__search-input {
+    width: 100%;
+    padding: calc(var(--spacing-base) * 2) calc(var(--spacing-base) * 3);
+    background-color: var(--c-bg-surface);
+    border: 1px solid var(--c-bg-elevated);
+    border-radius: 8px;
+    color: var(--c-text-main);
+    font-size: 0.95rem;
+    outline: none;
+    transition: border-color 0.2s ease;
+
+      &:focus {
+        border-color: var(--c-brand-primary);
+      }
   }
 
   &__company-banner {
