@@ -1,13 +1,44 @@
+<!--
+This file, App.vue, serves as the orchestrator and root layout engine for my user interface. 
+Its primary purpose is to manage the top-level state of the application, dynamically routing the view 
+between a comprehensive, filterable multi-company dashboard (the homepage grid) and a granular, asynchronous 
+single-asset data visualization dashboard (the chart view). By centralizing states like the currently active 
+market index, user search queries, and the selected corporate entity, this file establishes a predictable 
+unidirectional data flow—passing down reactive configurations as properties to sub-components and listening 
+for interactive data emissions to cleanly update my interface in real time.
+-->
+
 <script setup lang="ts">
+// Import the core reactivity methods from the Vue core engine.
+// 'ref' allows me to declare raw values as reactive, mutable pointer references.
+// 'computed' lets me derive read-only caching variables that automatically calculate 
+// new values only when their underlying reactive dependencies change.
 import { ref, computed } from 'vue';
+
+// Import my custom TypeScript interface definitions to enforce compile-time type safety 
+// when passing data objects across my component boundaries.
 import type { Asset } from './types'
+
+// Import my child presentation components. App.vue acts as the parent container 
+// that mounts and destroys these modules based on the application's runtime state.
 import StockGrid from './components/StockGrid.vue';
 import ChartView from './components/ChartView.vue'
 
+// Instantiate a reactive reference to track which company the user wants to analyze. 
+// It is explicitly typed to contain either a valid Asset object structure or 'null'. 
+// Initializing it as 'null' means the user starts by default on the homepage dashboard view.
 const selectedAsset = ref<Asset | null>(null)
+
+// Instantiate a reactive string reference to capture the user's keystrokes in the search input field.
 const searchQuery = ref<string>('')
+
+// Instantiate a reactive string tracking which market index is currently active. 
+// I initialize this to 'SP500', matching one of the indices supported by my FastAPI backend.
 const currentIndex = ref<string>('SP500')
 
+// Define a caching computed property to dynamically compute the user-facing header text.
+// If 'currentIndex' alters its state, this computed block detects the change, evaluates 
+// the matching conditional branch, and pushes the new string down to my HTML layout.
 const indexTitle = computed(() => {
   if (currentIndex.value === 'SP500') return 'S&P 500 Index'
   if (currentIndex.value === 'NASDAQ100') return 'Nasdaq-100'
@@ -15,9 +46,16 @@ const indexTitle = computed(() => {
   return 'Portfolio Equities'
 })
 
+// Define a callback function to handle asset selection. When a child component emits 
+// notice that a widget was clicked, this function captures that specific Asset data package 
+// and assigns it to my 'selectedAsset' reference, instantly updating the app view layout.
 const handleSelectedAsset = (asset: Asset) => {
   selectedAsset.value = asset
 }
+
+// Define a state restoration callback function. This function resets my tracking hooks 
+// back to baseline values, clearing active search fields and setting the selected company 
+// pointer back to 'null' to smoothly transition the layout back to the homepage grid view.
 const handleBacktoHome = () => {
   selectedAsset.value = null
   searchQuery.value = ''
@@ -29,9 +67,20 @@ const handleBacktoHome = () => {
       <!-- Header Block -->
        <header class="portfolio-app__header">
           <div class="portfolio-app__header-inner">
+            <!--
+              Vue Logic: '@click' is syntax representing an event listener (v-on:click). 
+              When a user clicks this heading element, it triggers the 'handleBacktoHome' 
+              JavaScript method, acting as an intuitive navigation shortcut.
+            -->
             <h1 class="portfolio-app__brand" @click="handleBacktoHome">
               Homepage <span class="portfolio-app__brand-pill">SEC Portal</span>
             </h1>
+
+            <!--
+              Vue Logic: 'v-if' is a powerful structural directive. If 'selectedAsset' evaluates 
+              to a truthy value (meaning an asset is actively being looked at), Vue injects this button 
+              element physically into the DOM. If 'null', it is completely stripped from the document.
+            -->
             <button
               v-if="selectedAsset"
               class="portfolio-app__back-button"
@@ -44,23 +93,39 @@ const handleBacktoHome = () => {
 
        <main class="portfolio-app__main">
         <!-- View 1: The Homepage 8-Widget Grid-->
+         <!--
+           Vue Logic: 'v-if="!selectedAsset"' means if NO asset has been clicked, display the 
+           homepage search and filtering grid dashboard layout.
+         -->
          <section v-if="!selectedAsset" class="portfolio-app__view-container">
           <div class="portfolio-app__view-header">
+            <!--
+              Vue Logic: '{{ indexTitle }}' is text interpolation syntax. It evaluates the string 
+              returned by my caching computed property and injects it dynamically into the text node.
+            -->
             <h2>{{ indexTitle }} Equities</h2>
             <p>Select a company widget below to analyze its historical fundamental trends.</p>
 
             <!-- Dynamic Interactive Switch Tags Block -->
              <div class="portfolio-app__index-tabs">
+              <!--
+                Vue Logic: ':class' (v-bind:class) allows dynamic CSS class evaluation. 
+                It injects the modification class 'portfolio-app__tab-btn--active' if and only if 
+                the conditional expression inside evaluates to true (currentIndex === 'SP500'). 
+                The click event listener updates my underlying reactive state on the fly.
+              -->
               <button
                 class="portfolio-app__tab-btn"
                 :class="{ 'portfolio-app__tab-btn--active': currentIndex === 'SP500'}"
                 @click="currentIndex = 'SP500'"
               >S&P 500</button>
+
               <button
                 class="portfolio-app__tab-btn"
                 :class="{ 'portfolio-app__tab-btn--active': currentIndex === 'NASDAQ100'}"
                 @click="currentIndex = 'NASDAQ100'"
               >Nasdaq-100</button>
+
               <button
                 class="portfolio-app__tab-btn"
                 :class="{ 'portfolio-app__tab-btn--active': currentIndex === 'DOW30'}"
@@ -70,6 +135,12 @@ const handleBacktoHome = () => {
 
             <!-- Search Filter Container-->
             <div class="portfolio-app__search-container">
+              <!--
+                Vue Logic: 'v-model' establishes a seamless two-way data binding pattern. 
+                When a user types inside this input box, the 'searchQuery' variable updates instantly 
+                in my script block. Conversely, if my script alters 'searchQuery', the input box text 
+                refreshes immediately to reflect that value.
+              -->
               <input
               v-model="searchQuery"
               type="search"
@@ -79,6 +150,14 @@ const handleBacktoHome = () => {
             </div>
           </div> 
 
+          <!--
+             Vue Logic: Here I instantiate my custom '<StockGrid>' component. 
+             - ':selectedIndex' and ':search-filter' bind and pass down my reactive parent states 
+               as properties ('props') into the child component.
+             - '@select-asset' is a custom event listener. When the child component decides to fire 
+               an emission named 'select-asset', this parent captures that signal along with its 
+               accompanying data payload and passes it straight to 'handleSelectedAsset'.
+           -->
            <StockGrid 
             :selectedIndex="currentIndex"
             :search-filter="searchQuery" 
@@ -86,15 +165,25 @@ const handleBacktoHome = () => {
          </section>
 
          <!-- VIEW 2: Asynchronous 4-Chart Detail View-->
+          <!--
+           Vue Logic: 'v-else' acts as a logical fallback pairing with the 'v-if' directly above it. 
+           If 'selectedAsset' is truthy, this alternate view container is mounted instead, rendering 
+           the multi-chart analytics breakdown.
+         -->
           <section v-else class="portfolio-app__view-container">
             <div class="portfolio-app__company-banner">
               <div class="portfolio-app__meta-row">
+                <!-- Interpolate the raw properties nested directly inside my asset state object -->
                 <span class="portfolio-app__ticker-badge">{{ selectedAsset.ticker }}</span>
                 <span class="portfolio-app__cik-info">CIK: {{ selectedAsset.cik }}</span>
               </div>
               <h2>{{ selectedAsset.name }}</h2>
             </div>
 
+            <!--
+              Vue Logic: Instantiate the custom '<ChartView>' component, binding and passing down 
+              the database-assigned auto-incrementing tracking ID of the active asset as a prop.
+            -->
             <ChartView :asset-id="selectedAsset.id"/>
           </section>
        </main>

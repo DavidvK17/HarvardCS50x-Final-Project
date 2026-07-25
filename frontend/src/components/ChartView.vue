@@ -1,6 +1,19 @@
+<!--
+This component, ChartView.vue, acts as the analytical core of my user interface. Its primary purpose 
+is to accept a unique asset tracking key, execute asynchronous data fetches to collect raw fundamental numbers 
+linked to that asset, map and normalize those raw entries into individual data series, and register 
+third-party charting layers (Chart.js / vue-chartjs) to construct a clean, four-quadrant, responsive graphical 
+dashboard tracking corporate performance.
+-->
+
 <script setup lang="ts">
+// Import core architectural reactive variables and structural lifecycle hooks out of the Vue core engine.
 import { ref, onMounted, watch, computed } from 'vue'
 import type { AssetFundamentals } from '../types'
+
+// Explicitly import and deconstruct the core underlying elements required by the Chart.js visualization engine.
+// Registering these elements ensures my compiled software bundle includes only the exact calculation metrics, 
+// scales, shapes, and tooltip items I use, keeping the app optimized and lightweight.
 import {
     Chart as ChartJS,
     Title,
@@ -12,8 +25,11 @@ import {
     PointElement,
     LineElement
 } from 'chart.js'
+
+// Import the specific component wrapper modules exposed by the vue-chartjs abstraction bridge.
 import { Bar, Line } from 'vue-chartjs'
 
+// Invoke my Chart.js configuration method to mount the imported charting structures directly into the library registry.
 ChartJS.register(
     Title,
     Tooltip,
@@ -25,21 +41,30 @@ ChartJS.register(
     LineElement
 )
 
+// Define my properties interface, requiring an incoming assetId identifier number from App.vue.
 const props = defineProps<{
     assetId: number
 }>()
 
+// State Containers Architecture:
+// Initialize an array structure to store rows of fundamental metrics fetched from my local SQLite storage.
 const history = ref<AssetFundamentals[]>([])
 const isLoading = ref<boolean>(true)
 const errorMessage = ref<string | null>(null)
 
 const fetchFundamentals = async () => {
+    /*
+    Asynchronously queries my FastAPI server to load the complete historical fundamental data package.
+    */
     try {
         isLoading.value = true
         errorMessage.value = null
+
+        // Dispatch the HTTP request tracking the specific corporate asset integer id parameter.
         const response = await fetch(`http://localhost:8000/api/fundamentals/${props.assetId}`)
 
         if (!response.ok) {
+            // If the backend returns a 404 status, it means the table returned empty records for that specific company.
             if (response.status === 404) {
                 throw new Error('No historical financial records found for this equity.')
             }
@@ -47,6 +72,7 @@ const fetchFundamentals = async () => {
         }
 
         const data = await response.json()
+        // Save the chronologically ordered array data maps into my history reactive buffer.
         history.value = data
     } catch (error) {
         errorMessage.value = error instanceof Error ? error.message : 'An unexpected network error occurred.'
@@ -56,9 +82,16 @@ const fetchFundamentals = async () => {
     }
 }
 
+// Bootstrapping Strategy: Initialize the data connection instantly upon component load.
 onMounted(() => fetchFundamentals())
+
+// Watcher Pattern: If a user clicks a new stock widget while browsing inside the detail view, 
+// the 'assetId' prop changes, causing this watcher to trigger an immediate background reload.
 watch(() => props.assetId, () => fetchFundamentals())
 
+// Design Configuration Configuration Object:
+// Sets global UI options matching my custom style definitions (suppressing legends, overriding grid canvas 
+// colors to match my slate colors, and setting font properties across the charts).
 const chartOptions = {
     responsive: true,
     maintainAspectRatio: false,
@@ -77,8 +110,14 @@ const chartOptions = {
     }
 }
 
+// Computed Axis Labels Map: Uses high-performance JavaScript .map array operators to cleanly 
+// pull the unique corporate 'fiscal_year' integers out of my data records, forming the shared X-axis labels array.
 const chartLabels = computed(() => history.value.map(record => record.fiscal_year))
 
+// Computed Datasets Maps:
+// The follow four blocks transform raw data arrays into standardized JSON payloads required by Chart.js.
+// Notice that for absolute corporate currencies (Revenue and Operating Income), I divide values by 1e9 (1 Billion) 
+// to avoid overflowing the interface canvas with long integer values, scaling the axes cleanly down to Billions.
 const revenueChartData = computed(() => ({
     labels: chartLabels.value,
     datasets: [{
@@ -125,31 +164,39 @@ const growthChartData = computed(() => ({
 <template>
     <div class="chart-view">
         <!-- State 1: Loading State Box -->
+         <!-- Vue Logic: If loading states are active, hold chart rendering and inject my global spinner. -->
          <div v-if="isLoading" class="chart-view__status">
             <div class="chart-view__spinner"></div>
             <p>Parsing corporate SEC financial package data streams...</p>
          </div>
 
          <!-- State 2: Error Alert Frame-->
+          <!-- Vue Logic: Capture and present standard pipeline structural exception warnings here. -->
          <div v-else-if="errorMessage" class="chart-view__status chart-view__status--error">
             <p>⚠️ Ingestion Error: {{ errorMessage }}</p>
          </div>
 
          <!-- State 3: The 4-Chart Visualization Matrix -->
+          <!-- Vue Logic: The Primary Dashboard Grid Layer mounted once data loading settles cleanly. -->
          <div v-else class="chart-view__grid">
 
-            <!-- Chart A: Top-line Revenue (Bar) -->
+            <!-- Chart Card A: Top-line revenue metrics bar chart setup -->
              <div class="chart-view__card">
                 <div class="chart-view__card-header">
                     <h4 class="chart-view__card-title">Annual Revenue</h4>
                     <span class="chart-view__unit-badge">USD Billions ($B)</span>
                 </div>
                 <div class="chart-view__canvas-container">
+                    <!-- 
+                      Vue Logic: Mount the custom `<Bar>` chart abstract class component. 
+                      I use dynamic property binding syntax (`:data` and `:options`) to pass 
+                      my computed data maps down into the library code.
+                    -->
                     <Bar :data="revenueChartData" :options="chartOptions" />
                 </div>
              </div>
 
-             <!-- Chart B: Core Operational Earnings (Bar) -->
+             <!-- Chart Card B: Core Operational Earnings bar chart setup -->
              <div class="chart-view__card">
                 <div class="chart-view__card-header">
                     <h4 class="chart-view__card-title">Operating Income</h4>
@@ -160,18 +207,19 @@ const growthChartData = computed(() => ({
                 </div>
              </div>
 
-            <!-- Chart C: Revenue Velocity Trajectory (Line) -->
+            <!-- Chart Card C: Revenue Velocity Trajectory line chart setup -->
              <div class="chart-view__card">
                 <div class="chart-view__card-header">
                     <h4 class="chart-view__card-title">Revenue Growth Yoy</h4>
                     <span class="chart-view__unit-badge chart-view__unit-badge--danger">Percentage (%)</span>
                 </div>
                 <div class="chart-view__canvas-container">
+                    <!-- Vue Logic: Mount the `<Line>` chart component, passing my reactive line options. -->
                     <Line :data="growthChartData" :options="chartOptions" />
                 </div>
              </div>
 
-             <!-- Chart D: Operational Profit Margins (Line) -->
+            <!-- Chart Card D: Operational Margins line chart setup -->
              <div class="chart-view__card">
                 <div class="chart-view__card-header">
                     <h4 class="chart-view__card-title">Operating Margin</h4>

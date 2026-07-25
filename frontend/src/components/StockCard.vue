@@ -1,22 +1,42 @@
+<!--
+This component, StockCard.vue, is a highly lightweight presentational component ("dumb component"). 
+Its singular responsibility is to accept a decoupled, isolated Asset metadata record package from its 
+parent layout container, format its inner string data parameters safely inside a clean corporate widget UI template, 
+and capture direct pointing click inputs to notify the master application frame exactly which stock has been chosen.
+-->
 <script setup lang="ts">
 import type { Asset } from '../types'
 
+// Setup macro mapping the structural Asset object constraints required to build this visualization container.
 defineProps<{
     asset: Asset
 }>()
 
+// Setup macro configuring my programmatic click dispatch emitter logic hook.
 const emit = defineEmits<{
     'select': [asset: Asset]
 }>()
 </script>
 
 <template>
+    <!-- 
+      Vue Logic: Add a programmatic click event listener directly onto the base root HTML card node wrapper.
+      The moment a user selects this item anywhere inside its bounds, the inline method executes, firing 
+      the custom event 'select' and passing the active asset variable dictionary up the call stack to the parent grid.
+    -->
     <div class="stock-card" @click="emit('select', asset)">
         <div class="stock-card__header">
+            <!-- Interpolate standard string tokens using mustache evaluation blocks -->
             <span class="stock-card__ticker">{{ asset.ticker }}</span>
             <span class="stock-card__id-badge">{{ asset.id }}</span>
         </div>
 
+        <!-- 
+          Vue Logic: ':title="asset.name"' leverages attribute binding syntax. 
+          This binds the native browser tool-tip hover attribute dynamically to the asset's full name, 
+          ensuring that if long enterprise corporate text strings overflow or truncate with ellipses inside 
+          my layout, a user can still read the full title simply by hovering their mouse pointer over it.
+        -->
         <h3 class="stock-card__name" :title="asset.name">
             {{ asset.name }}
         </h3>
