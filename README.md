@@ -1,5 +1,5 @@
 # Business Analytics: A Full-Stack SEC-Driven Corporate Fundamentals Dashboard
-#### Video Demo:  https://www.youtube.com/watch?v=dQw4w9WgXcQ (Placeholder URL - Replace with my actual unlisted YouTube link)
+#### Video Demo:  https://www.youtube.com/watch?v=2bej-CmjNog
 #### Description:
 
 ## Project Motivation & Core Concept
