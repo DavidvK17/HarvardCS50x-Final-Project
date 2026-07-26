@@ -73,7 +73,7 @@ const handleBacktoHome = () => {
               JavaScript method, acting as an intuitive navigation shortcut.
             -->
             <h1 class="portfolio-app__brand" @click="handleBacktoHome">
-              Homepage <span class="portfolio-app__brand-pill">SEC Portal</span>
+              Business Analytics Homepage <span class="portfolio-app__brand-pill">SEC Portal</span>
             </h1>
 
             <!--

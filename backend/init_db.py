@@ -6,6 +6,8 @@ strict integrity constraints like foreign keys and cascading deletes. Second, it
 leveraging the power of the pandas library to scrape live index constituents from Wikipedia, cross-referencing those discovered 
 tickers with the official U.S. SEC master directory to safely fetch verified Central Index Key (CIK) codes, and seeding my database 
 with a pristine baseline map of corporate identities.
+I used Gemini to provide extensive commentary to my project files for educational purposes and future review.
+ChatGPT gave be the idea to use pandas and it explained to me how that would be a much better approacht to solve my problem with the Nasdaq-100 Wiki page.
 """
 
 # Import the built-in sqlite3 library, allowing my Pythin script to communicate

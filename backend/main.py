@@ -6,6 +6,7 @@ REST API endpoints. It listens for incoming HTTP network requests from the brows
 parameters, executes efficient SQL queries to extract my curated asset and fundamental metrics, transforms 
 raw database rows into JSON-compliant data structures, and manages Cross-Origin Resource Sharing (CORS) 
 protocols to ensure smooth data delivery.
+I used Gemini to explain to me how FastApi and CORSMiddleware work, concepts I was not familiar with beforehand.
 """
 
 import sqlite3
