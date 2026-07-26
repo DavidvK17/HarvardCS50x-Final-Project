@@ -1,11 +1,19 @@
 # Business Analytics: A Full-Stack SEC-Driven Corporate Fundamentals Dashboard
-#### Video Demo:  https://www.youtube.com/watch?v=2bej-CmjNog
+#### Video Demo:  https://www.youtube.com/watch?v=hjWxJ1yFjts
 #### Description:
 
 ## Project Motivation & Core Concept
 Business Analytics is a full-stack financial analytics web application designed to automate the highly tedious process of tracking, calculating, and visualizing corporate financial fundamentals. For several years, I have manually maintained an expanding Google Workspace spreadsheet to log key annual financial metrics—specifically revenue, operating income, operating margins, and year-over-year (YoY) revenue growth rates—for the equities within my personal investment portfolio and watchlist. Scouring through complex SEC annual reports (Form 10-K filings) and manually porting these figures into custom charts became a massive operational bottleneck. I even resorted to paying out-of-pocket for commercial data visualization platforms just to view clean multi-year historical trajectories.
 
 Thanks to the foundational software engineering, database design, and web architecture skills I acquired throughout my journey in Harvard's CS50x, I realized I possessed the tools to build a custom, automated alternative. I designed this application to aggregate public market index listings from scratch, cross-reference them with federal identifiers, pull their complete financial histories directly from the U.S. Securities and Exchange Commission (SEC) EDGAR API, calculate growth vectors, and visualize the findings on an analytical frontend interface. Building Business Analytics allowed me to deeply practice full-stack integration, master relational junction tables in SQL, write highly structured type-safe frontend code, and deploy automated backend pipelines that respect federal scraping boundaries.
+
+---
+
+## Getting Started & Execution
+
+### Server
+Inside the `backend` directory, run: uvicorn main:app --host 0.0.0.0 --port 5000 --reload, make sure to change port 5000 visibility to public thereafter
+Inside the `frontend` directory, run: npm run dev
 
 ---
 
@@ -54,19 +62,19 @@ My first major engineering hurdle involved harvesting the initial component list
 This obstacle led to an eye-opening architectural breakthrough: instead of trying to patch an unmaintainable regex routine, I integrated the `pandas` library. Passing web URLs directly into `pd.read_html()` allowed me to instantly isolate and extract clean, structured dataframes from the underlying HTML tables. By deploying `pandas` utility methods, I easily sanitized column metrics, filtered missing rows, and resolved composite descriptions uniformly, drastically reducing codebase complexity and building a highly robust database seeding engine.
 
 ### 2. Navigating the Multi-Tiered SEC XBRL JSON Tree & GAAP Taxonomy
-When writing the parsing engine inside `fetch_sec.py`, I discovered that public corporations disclose their financial facts under radically varying accounting taxonomies depending on their industry sector. For instance, a technology firm might report its top-line earnings under the tag `Revenues`, whereas an online retail platform might call it `SalesRevenueNet`, and a financial group might list it under `RevenuesNetOfInterestExpense`. 
+When writing the parsing engine inside `fetch_sec.py`, I discovered that public corporations disclose their financial facts under radically varying accounting taxonomies depending on their industry sector. For instance, a technology firm might report its top-line earnings under the tag `Revenues`, whereas an online retail platform might call it `SalesRevenueNet`, and a financial group might list it under `RevenuesNetOfInterestExpense`.
 
-To solve this inconsistency without crashing my network loops, I implemented a prioritized fallback array of alternative U.S. GAAP taxonomy strings for both revenue and operating income, looping through them sequentially until a valid dataset was successfully matched. 
+To solve this inconsistency without crashing my network loops, I implemented a prioritized fallback array of alternative U.S. GAAP taxonomy strings for both revenue and operating income, looping through them sequentially until a valid dataset was successfully matched.
 
 Additionally, corporations frequently amend past filings years after submission. To prevent older data points from colliding with or corrupting newer restatements, I designed an override system that checks the raw SEC timestamp (`filed_date`) for each entry, ensuring that updated or restated financial records cleanly overwrite legacy rows in my database.
 
 ### 3. Proactively Mitigating Strict Federal API Rate Limits
-When designing the data extraction engine inside `fetch_sec.py`, a primary architectural consideration was ensuring strict compliance with federal infrastructure access boundaries. A thorough review of the official SEC EDGAR API developer documentation revealed a stringent network security policy: automated scripts are strictly capped at a maximum velocity of 10 requests per second, and anonymous, improperly declared, or high-velocity IP addresses face immediate automated firewall bans (`HTTP 403 Forbidden`). 
+When designing the data extraction engine inside `fetch_sec.py`, a primary architectural consideration was ensuring strict compliance with federal infrastructure access boundaries. A thorough review of the official SEC EDGAR API developer documentation revealed a stringent network security policy: automated scripts are strictly capped at a maximum velocity of 10 requests per second, and anonymous, improperly declared, or high-velocity IP addresses face immediate automated firewall bans (`HTTP 403 Forbidden`).
 
 To ensure the application operated safely within these compliance guidelines from day one, I engineered defensive rate-limiting directly into the pipeline's execution block. Along with structuring a custom, compliant User-Agent header, I embedded an explicit `time.sleep(0.15)` delay at the conclusion of every individual company processing loop. This intentionally throttled the extraction engine down to a highly stable rate of roughly 6.6 requests per second, ensuring uninterrupted, safe data ingestion without risking server-side blacklisting or infrastructure strain.
 
 ### 4. Defining the Scope of the Minimum Viable Product (MVP)
-A major design challenge was fighting feature creep. As an active investor, I wanted to instantly implement advanced features, such as multi-asset comparison lines, automatic portfolio trackers, authentication guard lines, international indices, and live cloud deployment setups on platforms like AWS, GCP, or Azure. 
+A major design challenge was fighting feature creep. As an active investor, I wanted to instantly implement advanced features, such as multi-asset comparison lines, automatic portfolio trackers, authentication guard lines, international indices, and live cloud deployment setups on platforms like AWS, GCP, or Azure.
 
 However, drawing on software architecture principles, I chose to ruthlessly prioritize the absolute core features needed for a stable Minimum Viable Product. I deliberately deferred secondary features to subsequent iteration phases, allowing me to focus entirely on building a highly reliable data pipeline, writing clean TypeScript definitions, and maintaining structural state management across the full stack.
 
