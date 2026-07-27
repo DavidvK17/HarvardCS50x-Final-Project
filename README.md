@@ -12,8 +12,13 @@ Thanks to the foundational software engineering, database design, and web archit
 ## Getting Started & Execution
 
 ### Server
-Inside the `backend` directory, run: uvicorn main:app --host 0.0.0.0 --port 5000 --reload, make sure to change port 5000 visibility to public thereafter
-Inside the `frontend` directory, run: npm run dev
+Inside the `backend` directory, run: 
+* **python3 -m uvicorn main:app --reload**
+* visit: **http://127.0.0.1:8000/docs**
+
+Inside the `frontend` directory, run: 
+* **npm run dev**
+* visit: **http://localhost:5173/**
 
 ---
 
