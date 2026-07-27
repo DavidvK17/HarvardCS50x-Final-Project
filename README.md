@@ -11,13 +11,13 @@ Thanks to the foundational software engineering, database design, and web archit
 
 ## Getting Started & Execution
 
-### Server
+### Server:
 Inside the `backend` directory, run: 
 * `python3 -m uvicorn main:app --reload`
 
 visit: **http://127.0.0.1:8000/docs**
 
-### Client
+### Client:
 Inside the `frontend` directory, run: 
 * `npm run dev`
 
